@@ -1,0 +1,410 @@
+<p>This is a prototype Generative AI file data extraction engine</p>
+<p>Upload your file below to view their details, a preview and AI analysis:</p>
+<p>Note: Only image and PDF file are supported for AI analysis.</p>
+<br>
+<p>Click on the file input below to select file from your device.(single file only)</p>
+<label for="fileInput">Choose file</label>
+<input type="file" id="fileInput" accept="application/pdf, image/*" single>
+<div id="fileInfo"></div>
+<div id="preview"></div>
+
+
+<script>
+  // Add an event listener to the file input
+  // to handle file selection
+  // and display file information and preview
+  // and send the file to the lambda function
+  // and display the AI analysis result
+
+  document.getElementById('fileInput').addEventListener('change', function(event) {
+    var files = event.target.files;
+    var info = document.getElementById('fileInfo');
+    var preview = document.getElementById('preview');
+
+    // Clear any existing content
+    preview.innerHTML = '';
+    info.innerHTML = '';
+
+    // Loop through all selected files
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+
+      // Check if the file is not an image or PDF
+      if (file.type !== 'application/pdf' && !file.type.match('image.*')) {
+        continue; // Skip to the next file
+      }
+
+
+      // process pdf files
+      if (file.type === 'application/pdf') {
+        var fileInfo = `
+          <p>File ${i + 1}:</p>
+          <p>File Name: ${file.name}</p>
+          <p>File Size: ${file.size} bytes</p>
+          <p>File Type: ${file.type}</p>
+          <br>
+        `;
+        info.innerHTML += fileInfo;
+        // preview pdf files
+        var pdfContainer = document.createElement('div');
+        var pdf = document.createElement('embed');
+        // Set the type of the PDF embed element
+        pdf.src = URL.createObjectURL(file);
+        pdf.type = 'application/pdf';
+        pdf.style.width = '100%';
+        pdf.style.height = '300px';
+        var pdfInfo = document.createElement('p');
+        pdfInfo.textContent = `File ${i + 1}. Name: ${file.name}, Type: ${file.type}, Size: ${file.size} bytes, URL: ${pdf.src}`;
+        pdfInfo.style.fontSize = '14px';
+        pdfInfo.style.marginTop = '0';
+        // Append the pdf and file info to the container
+        pdfContainer.appendChild(pdf);
+        pdfContainer.appendChild(pdfInfo);
+        pdfContainer.style.marginBottom = '20px'; // Spacing between each pdf container
+        pdfContainer.style.border = '1px solid #ccc'; // Optional: add border to the pdf container
+        pdfContainer.style.borderRadius = '4px'; // Optional: add border radius to the pdf container
+        pdfContainer.style.overflow = 'hidden'; // Optional: hide overflow
+        pdfContainer.style.position = 'relative'; // Optional: set position to relative
+        pdfContainer.style.backgroundColor = '#f9f9f9'; // Optional: set background color
+        pdfContainer.style.padding = '10px'; // Optional: add padding to the pdf container
+        pdfContainer.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)'; // Optional: add shadow to the pdf container
+        pdfContainer.style.marginTop = '10px'; // Optional: add margin to the pdf container
+        pdfContainer.style.display = 'flex'; // Optional: set display to flex
+        pdfContainer.style.flexDirection = 'column'; // Optional: set flex direction to column
+        pdfContainer.style.alignItems = 'center'; // Optional: center align items
+        pdfContainer.style.justifyContent = 'center'; // Optional: center justify content
+        pdfContainer.style.textAlign = 'center'; // Optional: center align text
+        pdfContainer.style.fontFamily = 'Arial, sans-serif'; // Optional: set font family
+        pdfContainer.style.fontSize = '14px'; // Optional: set font size
+        pdfContainer.style.color = '#333'; // Optional: set text color
+        pdfContainer.style.lineHeight = '1.5'; // Optional: set line height
+        pdfContainer.style.marginTop = '10px'; // Optional: add margin to the pdf container
+        pdfContainer.style.marginBottom = '20px'; // Spacing between each pdf container
+        pdfContainer.style.width = '100%'; // Optional: set width to 100%
+        pdfContainer.style.maxWidth = '600px'; // Optional: set max width to 600px
+        pdfContainer.style.boxSizing = 'border-box'; // Optional: set box sizing to border box
+        preview.appendChild(pdfContainer);
+      }
+
+      //process image files
+      if (file.type.match('image.*')) {
+        // process image files
+        var fileInfo = `
+          <p>File ${i + 1}:</p>
+          <p>File Name: ${file.name}</p>
+          <p>File Size: ${file.size} bytes</p>
+          <p>File Type: ${file.type}</p>
+          <br>
+        `;
+        // Append file info to the info div
+        info.innerHTML += fileInfo;
+        // Create a new div for each image
+        var imgContainer = document.createElement('div');
+        imgContainer.style.marginBottom = '20px'; // Spacing between each image container
+
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.display = 'block'; // Ensure the image is displayed in a block to put it on a new line
+        img.style.marginBottom = '10px';
+
+        var fileInfo = document.createElement('p');
+        fileInfo.textContent = `File ${i + 1}. Name: ${file.name}, Type: ${file.type}, Size: ${file.size} bytes, URL: ${img.src}`;
+        fileInfo.style.fontFamily = 'Arial, sans-serif';
+        fileInfo.style.fontSize = '14px';
+        fileInfo.style.marginTop = '0';
+
+        // Append the image and file info to the container
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(fileInfo);
+        imgContainer.style.border = '1px solid #ccc'; // Optional: add border to the image container
+        imgContainer.style.borderRadius = '4px'; // Optional: add border radius to the image container
+        imgContainer.style.overflow = 'hidden'; // Optional: hide overflow
+        imgContainer.style.position = 'relative'; // Optional: set position to relative
+        imgContainer.style.backgroundColor = '#f9f9f9'; // Optional: set background color
+        imgContainer.style.padding = '10px'; // Optional: add padding to the image container
+        imgContainer.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)'; // Optional: add shadow to the image container
+        imgContainer.style.marginTop = '10px'; // Optional: add margin to the image container
+        imgContainer.style.display = 'flex'; // Optional: set display to flex
+        imgContainer.style.flexDirection = 'column'; // Optional: set flex direction to column
+        imgContainer.style.alignItems = 'center'; // Optional: center align items
+        imgContainer.style.justifyContent = 'center'; // Optional: center justify content
+        imgContainer.style.textAlign = 'center'; // Optional: center align text
+        imgContainer.style.fontFamily = 'Arial, sans-serif'; // Optional: set font family
+        imgContainer.style.fontSize = '14px'; // Optional: set font size
+        imgContainer.style.color = '#333'; // Optional: set text color
+        imgContainer.style.lineHeight = '1.5'; // Optional: set line height
+        imgContainer.style.width = '100%'; // Optional: set width to 100%
+        imgContainer.style.maxWidth = '600px'; // Optional: set max width to 600px
+        imgContainer.style.boxSizing = 'border-box'; // Optional: set box sizing to border box
+        imgContainer.style.cursor = 'pointer'; // Optional: set cursor to pointer
+        imgContainer.style.transition = 'transform 0.2s'; // Optional: add transition for hover effect
+        imgContainer.addEventListener('mouseover', function() {
+          imgContainer.style.transform = 'scale(1.05)'; // Optional: add hover effect
+        });
+
+        // Append the container to the preview div
+        preview.appendChild(imgContainer);
+      }
+      // send the file in bytes to the lambda function
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var fileBytes = e.target.result;
+        // Here you would typically send the fileBytes to your backend or lambda function
+        // For demonstration, we will just log it to the console
+        console.log(`File ${i + 1} bytes:`, fileBytes);
+        // Call the API with the file data
+        callAPI(file,fileBytes);
+        //display the AI analysis result in the preview section
+        var analysisResult = document.createElement('p');
+        analysisResult.textContent = `AI Analysis Result for ${file.name}:`;
+        analysisResult.style.fontFamily = 'Arial, sans-serif';
+        analysisResult.style.fontSize = '14px';
+        analysisResult.style.color = '#333';
+        preview.appendChild(analysisResult);
+      };
+      // Read the file as an ArrayBuffer
+      reader.readAsArrayBuffer(file);
+
+      // define the callAPI function to send the file data to the API
+      var callAPI = (file, fileBytes) =>{
+        // instantiate a headers object
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Access-Control-Allow-Origin", "*");
+        // create a raw string with the file data
+        var raw = JSON.stringify({
+            "fileName": file.name,
+            "fileType": file.type,
+            "fileSize": file.size,
+            "fileBytes": Array.from(new Uint8Array(fileBytes)) // Convert ArrayBuffer to array
+        });
+        // You can also display a message indicating that the file is being processed
+        var processingMessage = document.createElement('p');
+        processingMessage.textContent = `Processing ${file.name}...`;
+        processingMessage.style.fontFamily = 'Arial, sans-serif';
+        processingMessage.style.fontSize = '14px';
+        processingMessage.style.color = '#555';
+        preview.appendChild(processingMessage);
+        // add the file data to the raw string
+        // create a new request options object
+        // with method, headers and body
+        // create a JSON object with parameters for API call and store in a variable
+        // send cross-origin request
+        // using fetch API to make a POST request to the API endpoint
+        // with the file data in the body
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow',
+            mode: 'cors' // Enable CORS for cross-origin requests
+        };
+
+        // Log the request options to the console for debugging
+        console.log('Request Options:', requestOptions);
+        // Log the file bytes to the console for debugging
+        console.log('File Bytes:', Array.from(new Uint8Array(fileBytes)));
+
+        // make API call with parameters and use promises to get response
+
+        var res;
+        fetch("https://5meplh7pkb.execute-api.ap-northeast-1.amazonaws.com/dev-bdnai-0", requestOptions)
+        .then(response => response.text())
+        .then(result => {
+            console.log('AI analysis result:', result);
+            res = JSON.parse(result).body; // Store the result for later use
+            // extract all the words from the json response
+            // a word is a string between two '\n' characters
+            // var entries = JSON.stringify(res).split('\\\"'); // Split the result by newline character
+            const entries = JSON.parse(res);
+            // preview the file name
+            preview.innerHTML += `<h3>AI Analysis Result for ${file.name}:</h3>`;
+            // if multiple entries
+            if (Array.isArray(entries)) {
+              preview.innerHTML += '<br>';
+              preview.innerHTML += `<p>Found ${entries.length} entries:</p>`;
+              // add one newline
+              preview.innerHTML += '<br>';
+              for (entry in entries) {
+                console.log(entry, entries[entry]);
+                  preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
+                for (const [key, value] of Object.entries(entries[entry])) {
+                  // display each key-value pair in the preview section
+                  console.log(`${key}: ${value}`);
+                  // create a new div for each entry
+                  var entryDiv = document.createElement('div');
+                  entryDiv.style.marginBottom = '10px'; // Spacing between each entry
+                  entryDiv.style.fontFamily = 'Arial, sans-serif';
+                  entryDiv.style.fontSize = '14px';
+                  entryDiv.style.color = '#333';
+                  entryDiv.textContent = `${key}: ${value}`;
+                  // Append the entry div to the preview section
+                  preview.appendChild(entryDiv);
+                }
+                preview.innerHTML += '<hr>'; // Add a horizontal line between entries
+              }
+            } else {
+              preview.innerHTML += `<p>Found 1 entry:</p>`;
+              preview.innerHTML += '<br>';
+              for (const [key, value] of Object.entries(entries)) {
+                // display each key-value pair in the preview section
+                console.log(`${key}: ${value}`);
+                // create a new div for each entry
+                var entryDiv = document.createElement('div');
+                entryDiv.style.marginBottom = '10px'; // Spacing between each entry
+                entryDiv.style.fontFamily = 'Arial, sans-serif';
+                entryDiv.style.fontSize = '14px';
+                entryDiv.style.color = '#333';
+                entryDiv.textContent = `${key}: ${value}`;
+                // Append the entry div to the preview section
+                preview.appendChild(entryDiv);
+              }
+            }
+
+            //for (entry in entries) {
+              //console.log(entry, entries[entry]);
+                //preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
+              //for (const [key, value] of Object.entries(entries[entry])) {
+                // display each key-value pair in the preview section
+                //console.log(`${key}: ${value}`);
+                // create a new div for each entry
+                //var entryDiv = document.createElement('div');
+                //entryDiv.style.marginBottom = '10px'; // Spacing between each entry
+                //entryDiv.style.fontFamily = 'Arial, sans-serif';
+                //entryDiv.style.fontSize = '14px';
+                //entryDiv.style.color = '#333';
+                //entryDiv.textContent = `${key}: ${value}`;
+                // Append the entry div to the preview section
+                //preview.appendChild(entryDiv);
+              //}
+              //preview.innerHTML += '<hr>'; // Add a horizontal line between entries
+            //}
+            //for (const [key, value] of Object.entries(entries)) {
+              // display each key-value pair in the preview section
+              //console.log(`${key}: ${value}`);
+              // create a new div for each entry
+              //var entryDiv = document.createElement('div');
+              //entryDiv.style.marginBottom = '10px'; // Spacing between each entry
+              //entryDiv.style.fontFamily = 'Arial, sans-serif';
+              //entryDiv.style.fontSize = '14px';
+              //entryDiv.style.color = '#333';
+              //entryDiv.textContent = `${key}: ${value}`;
+              // Append the entry div to the preview section
+              //preview.appendChild(entryDiv);
+            //}
+
+            // display entries in the preview section
+            //var entriesDiv = document.createElement('div');
+            //entriesDiv.style.fontFamily = 'Arial, sans-serif';
+            //entriesDiv.style.fontSize = '14px';
+            //entriesDiv.style.color = '#333';
+            //entriesDiv.style.marginTop = '20px';
+            //entriesDiv.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
+            //entriesDiv.textContent = `AI Analysis Result for ${file.name}:\n${entries.join('\n')}`;
+            // Append the entries div to the preview section
+            //preview.appendChild(entriesDiv);
+
+            // Optionally, you can also display the result in a more readable format
+            // For example, you can create a JSON string from the result
+            // and display it in a preformatted text block
+            // add a title for the JSON result
+            preview.innerHTML += `<h3>JSON Result for ${file.name}:</h3>`;
+            // create a preformatted text block to display the JSON result
+            var jsonResult = document.createElement('pre');
+            jsonResult.textContent = res //JSON.stringify(res, null, 2); // Pretty print JSON
+            // change to a new row when encountering the '\n' character
+            jsonResult.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
+            jsonResult.style.backgroundColor = '#f0f0f0'; // Light background for better readability
+            jsonResult.style.padding = '10px';
+            jsonResult.style.border = '1px solid #ccc';
+            jsonResult.style.borderRadius = '4px';
+            jsonResult.style.fontFamily = 'Courier New, monospace';
+            jsonResult.style.fontSize = '14px';
+            jsonResult.style.color = '#333';
+            jsonResult.style.marginTop = '20px';
+            preview.appendChild(jsonResult);
+            // You can also create a list of key-value pairs
+            // from the result and display it in a list
+            // var list = document.createElement('ul');
+            // Object.entries(entries).forEach(([key, value]) => {
+            //   var listItem = document.createElement('li');
+            //   listItem.textContent = `${key}: ${value}`;
+            //   list.appendChild(listItem);
+            // });
+            // preview.appendChild(list);
+        })
+        .catch(error => console.log('error', error));
+      }
+      // Optionally, you can also send the file to a server or lambda function here
+      // using fetch to send the fileBytes
+      // fetch('YOUR_LAMBDA_FUNCTION_URL', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/octet-stream'
+      //   },
+      //   body: fileBytes
+      // })
+      // .then(response => response.json())
+      // .then(data => {
+      //   console.log('AI analysis result:', data);
+      //   var analysisResult = document.createElement('p');
+      //   analysisResult.textContent = `AI Analysis Result for ${file.name}: ${data.result}`;
+      //   analysisResult.style.fontFamily = 'Arial, sans-serif';
+      //   analysisResult.style.fontSize = '14px';
+      //   analysisResult.style.color = '#333';
+      //   preview.appendChild(analysisResult);
+      // })
+    }
+  });
+</script>
+
+<style>
+  #fileInfo {
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+  }
+  #preview {
+    margin-top: 20px;
+  }
+  img {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  p {
+    margin: 0;
+  }
+  label {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  input[type="file"] {
+    margin-bottom: 20px;
+  }
+  #fileInput {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+  #fileInput:focus {
+    outline: none;
+    border: 2px solid #007BFF;
+  }
+  #fileInput:hover {
+    cursor: pointer;
+  }
+  #fileInfo p {
+    margin: 5px 0;
+  }
+  #preview div {
+    margin-bottom: 20px;
+  }
+  #preview img {
+    margin-bottom: 10px;
+  }
+  #preview p {
+    font-size: 14px;
+    margin-top: 0;
+  }

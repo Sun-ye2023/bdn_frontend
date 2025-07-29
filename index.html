@@ -9,12 +9,31 @@
 <div id="preview"></div>
 
 
-<script>
+<script type="module">
   // Add an event listener to the file input
   // to handle file selection
   // and display file information and preview
   // and send the file to the lambda function
   // and display the AI analysis result
+  import {Amplify} from "https://cdn.skypack.dev/aws-amplify";
+  import { fetchAuthSession } from "https://cdn.skypack.dev/aws-amplify/auth";
+  import { Sha256 } from "https://cdn.skypack.dev/@aws-crypto/sha256-js";
+  import { HttpRequest } from "https://cdn.skypack.dev/@aws-sdk/protocol-http";
+  import { SignatureV4 } from "https://cdn.skypack.dev/@aws-sdk/signature-v4";
+
+  let lambdaUrl = 'https://dbsw5ueuzq2bs4cmonlitgwtxq0bavhk.lambda-url.ap-northeast-1.on.aws/'; // Replace with your Lambda URL
+  let identityPoolId = 'ap-northeast-1:e5b78e50-50a9-4ee4-bdd2-deee298af3f5'; // Replace with your Identity Pool ID
+
+  Amplify.configure({
+    Auth: {
+      Cognito:{
+        identityPoolId: identityPoolId,
+        allowGuestAccess: true, // Allow guest access
+        region: 'ap-northeast-1', // Replace with your region
+      }
+    },
+  });
+
 
   document.getElementById('fileInput').addEventListener('change', function(event) {
     var files = event.target.files;
@@ -147,217 +166,139 @@
         // Append the container to the preview div
         preview.appendChild(imgContainer);
       }
-      // send the file in bytes to the lambda function
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var fileBytes = e.target.result;
-        // Here you would typically send the fileBytes to your backend or lambda function
-        // For demonstration, we will just log it to the console
-        console.log(`File ${i + 1} bytes:`, fileBytes);
-        // Call the API with the file data
-        callAPI(file,fileBytes);
-        //display the AI analysis result in the preview section
-        var analysisResult = document.createElement('p');
-        analysisResult.textContent = `AI Analysis Result for ${file.name}:`;
-        analysisResult.style.fontFamily = 'Arial, sans-serif';
-        analysisResult.style.fontSize = '14px';
-        analysisResult.style.color = '#333';
-        preview.appendChild(analysisResult);
-      };
-      // Read the file as an ArrayBuffer
-      reader.readAsArrayBuffer(file);
-
-      // define the callAPI function to send the file data to the API
-      var callAPI = (file, fileBytes) =>{
-        // instantiate a headers object
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-        myHeaders.append("Access-Control-Allow-Origin", "*");
-        // create a raw string with the file data
-        var raw = JSON.stringify({
-            "fileName": file.name,
-            "fileType": file.type,
-            "fileSize": file.size,
-            "fileBytes": Array.from(new Uint8Array(fileBytes)) // Convert ArrayBuffer to array
-        });
-        // You can also display a message indicating that the file is being processed
-        var processingMessage = document.createElement('p');
-        processingMessage.textContent = `Processing ${file.name}...`;
-        processingMessage.style.fontFamily = 'Arial, sans-serif';
-        processingMessage.style.fontSize = '14px';
-        processingMessage.style.color = '#555';
-        preview.appendChild(processingMessage);
-        // add the file data to the raw string
-        // create a new request options object
-        // with method, headers and body
-        // create a JSON object with parameters for API call and store in a variable
-        // send cross-origin request
-        // using fetch API to make a POST request to the API endpoint
-        // with the file data in the body
-        var requestOptions = {
-            method: 'POST',
-            headers: myHeaders,
-            body: raw,
-            redirect: 'follow',
-            mode: 'cors' // Enable CORS for cross-origin requests
-        };
-
-        // Log the request options to the console for debugging
-        console.log('Request Options:', requestOptions);
-        // Log the file bytes to the console for debugging
-        console.log('File Bytes:', Array.from(new Uint8Array(fileBytes)));
-
-        // make API call with parameters and use promises to get response
-
-        var res;
-        fetch("https://5meplh7pkb.execute-api.ap-northeast-1.amazonaws.com/dev-bdnai-0", requestOptions)
-        .then(response => response.text())
-        .then(result => {
-            console.log('AI analysis result:', result);
-            res = JSON.parse(result).body; // Store the result for later use
-            // extract all the words from the json response
-            // a word is a string between two '\n' characters
-            // var entries = JSON.stringify(res).split('\\\"'); // Split the result by newline character
-            const entries = JSON.parse(res);
-            // preview the file name
-            preview.innerHTML += `<h3>AI Analysis Result for ${file.name}:</h3>`;
-            // if multiple entries
-            if (Array.isArray(entries)) {
-              preview.innerHTML += '<br>';
-              preview.innerHTML += `<p>Found ${entries.length} entries:</p>`;
-              // add one newline
-              preview.innerHTML += '<br>';
-              for (entry in entries) {
-                console.log(entry, entries[entry]);
-                  preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
-                for (const [key, value] of Object.entries(entries[entry])) {
-                  // display each key-value pair in the preview section
-                  console.log(`${key}: ${value}`);
-                  // create a new div for each entry
-                  var entryDiv = document.createElement('div');
-                  entryDiv.style.marginBottom = '10px'; // Spacing between each entry
-                  entryDiv.style.fontFamily = 'Arial, sans-serif';
-                  entryDiv.style.fontSize = '14px';
-                  entryDiv.style.color = '#333';
-                  entryDiv.textContent = `${key}: ${value}`;
-                  // Append the entry div to the preview section
-                  preview.appendChild(entryDiv);
-                }
-                preview.innerHTML += '<hr>'; // Add a horizontal line between entries
-              }
-            } else {
-              preview.innerHTML += `<p>Found 1 entry:</p>`;
-              preview.innerHTML += '<br>';
-              for (const [key, value] of Object.entries(entries)) {
-                // display each key-value pair in the preview section
-                console.log(`${key}: ${value}`);
-                // create a new div for each entry
-                var entryDiv = document.createElement('div');
-                entryDiv.style.marginBottom = '10px'; // Spacing between each entry
-                entryDiv.style.fontFamily = 'Arial, sans-serif';
-                entryDiv.style.fontSize = '14px';
-                entryDiv.style.color = '#333';
-                entryDiv.textContent = `${key}: ${value}`;
-                // Append the entry div to the preview section
-                preview.appendChild(entryDiv);
-              }
-            }
-
-            //for (entry in entries) {
-              //console.log(entry, entries[entry]);
-                //preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
-              //for (const [key, value] of Object.entries(entries[entry])) {
-                // display each key-value pair in the preview section
-                //console.log(`${key}: ${value}`);
-                // create a new div for each entry
-                //var entryDiv = document.createElement('div');
-                //entryDiv.style.marginBottom = '10px'; // Spacing between each entry
-                //entryDiv.style.fontFamily = 'Arial, sans-serif';
-                //entryDiv.style.fontSize = '14px';
-                //entryDiv.style.color = '#333';
-                //entryDiv.textContent = `${key}: ${value}`;
-                // Append the entry div to the preview section
-                //preview.appendChild(entryDiv);
-              //}
-              //preview.innerHTML += '<hr>'; // Add a horizontal line between entries
-            //}
-            //for (const [key, value] of Object.entries(entries)) {
-              // display each key-value pair in the preview section
-              //console.log(`${key}: ${value}`);
-              // create a new div for each entry
-              //var entryDiv = document.createElement('div');
-              //entryDiv.style.marginBottom = '10px'; // Spacing between each entry
-              //entryDiv.style.fontFamily = 'Arial, sans-serif';
-              //entryDiv.style.fontSize = '14px';
-              //entryDiv.style.color = '#333';
-              //entryDiv.textContent = `${key}: ${value}`;
-              // Append the entry div to the preview section
-              //preview.appendChild(entryDiv);
-            //}
-
-            // display entries in the preview section
-            //var entriesDiv = document.createElement('div');
-            //entriesDiv.style.fontFamily = 'Arial, sans-serif';
-            //entriesDiv.style.fontSize = '14px';
-            //entriesDiv.style.color = '#333';
-            //entriesDiv.style.marginTop = '20px';
-            //entriesDiv.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
-            //entriesDiv.textContent = `AI Analysis Result for ${file.name}:\n${entries.join('\n')}`;
-            // Append the entries div to the preview section
-            //preview.appendChild(entriesDiv);
-
-            // Optionally, you can also display the result in a more readable format
-            // For example, you can create a JSON string from the result
-            // and display it in a preformatted text block
-            // add a title for the JSON result
-            preview.innerHTML += `<h3>JSON Result for ${file.name}:</h3>`;
-            // create a preformatted text block to display the JSON result
-            var jsonResult = document.createElement('pre');
-            jsonResult.textContent = res //JSON.stringify(res, null, 2); // Pretty print JSON
-            // change to a new row when encountering the '\n' character
-            jsonResult.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
-            jsonResult.style.backgroundColor = '#f0f0f0'; // Light background for better readability
-            jsonResult.style.padding = '10px';
-            jsonResult.style.border = '1px solid #ccc';
-            jsonResult.style.borderRadius = '4px';
-            jsonResult.style.fontFamily = 'Courier New, monospace';
-            jsonResult.style.fontSize = '14px';
-            jsonResult.style.color = '#333';
-            jsonResult.style.marginTop = '20px';
-            preview.appendChild(jsonResult);
-            // You can also create a list of key-value pairs
-            // from the result and display it in a list
-            // var list = document.createElement('ul');
-            // Object.entries(entries).forEach(([key, value]) => {
-            //   var listItem = document.createElement('li');
-            //   listItem.textContent = `${key}: ${value}`;
-            //   list.appendChild(listItem);
-            // });
-            // preview.appendChild(list);
-        })
-        .catch(error => console.log('error', error));
-      }
-      // Optionally, you can also send the file to a server or lambda function here
-      // using fetch to send the fileBytes
-      // fetch('YOUR_LAMBDA_FUNCTION_URL', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/octet-stream'
-      //   },
-      //   body: fileBytes
-      // })
-      // .then(response => response.json())
-      // .then(data => {
-      //   console.log('AI analysis result:', data);
-      //   var analysisResult = document.createElement('p');
-      //   analysisResult.textContent = `AI Analysis Result for ${file.name}: ${data.result}`;
-      //   analysisResult.style.fontFamily = 'Arial, sans-serif';
-      //   analysisResult.style.fontSize = '14px';
-      //   analysisResult.style.color = '#333';
-      //   preview.appendChild(analysisResult);
-      // })
     }
   });
+
+  // Function to send the file in bytes to the lambda function
+  async function sendFileToLambda(file) {
+    const fileBytes = await file.arrayBuffer();
+    // create a raw string with the file data
+    var raw = JSON.stringify({
+        "fileName": file.name,
+        "fileType": file.type,
+        "fileSize": file.size,
+        "fileBytes": Array.from(new Uint8Array(fileBytes)) // Convert ArrayBuffer to array
+    });
+
+    const { credentials } = await fetchAuthSession();
+    const url = new URL(lambdaUrl)
+    // display credentials on webpage
+    console.log('Credentials:', credentials);
+    console.log('Lambda URL:', lambdaUrl);
+    // Create a new request to the lambda function
+
+    const request = new HttpRequest({
+      hostname: url.hostname,
+      path: url.pathname,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        host: url.hostname,
+      },
+      body: raw,
+      url: url,
+    });
+
+    // Sign the request
+    const signer = new SignatureV4({
+      credentials,
+      region: "ap-northeast-1",
+      service: "lambda",
+      sha256: Sha256,
+    });
+    const {headers, body, method} = await signer.sign(request);
+
+    // Send the request
+    const response = await fetch(lambdaUrl, {
+      method: method,
+      headers: headers,
+      body: body,
+    });
+    const data = await response.json();
+    return data;
+  }
+  document.getElementById('fileInput').addEventListener('change', async function(event) {
+    var files = event.target.files;
+    if (files.length > 0) {
+      var file = files[0];
+      if (file.type === 'application/pdf' || file.type.match('image.*')) {
+        try {
+          const result = await sendFileToLambda(file);
+          displayAIAnalysisResult(result);
+        } catch (err) {
+          displayAIAnalysisResult({ error: err.message || 'Failed to analyze file.' });
+        }
+      }
+    }
+  });
+  // Function to display the AI analysis result in JSON format
+  function displayAIJsonResult(result) {
+    const preview = document.getElementById('preview');
+    const resultDiv = document.createElement('div');
+    resultDiv.style.marginTop = '20px';
+    resultDiv.style.fontFamily = 'Arial, sans-serif';
+    resultDiv.style.fontSize = '16px';
+    resultDiv.style.color = '#333';
+    resultDiv.innerHTML = `<h3>AI Analysis Result:</h3><pre>${JSON.stringify(result, null, 2)}</pre>`;
+    resultDiv.style.backgroundColor = '#f9f9f9'; // Optional: set background color
+    resultDiv.style.padding = '10px'; // Optional: add padding to the result container
+    resultDiv.style.border = '1px solid #ccc'; // Optional: add border to the result container
+    resultDiv.style.borderRadius = '4px'; // Optional: add border radius to the result container
+    resultDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)'; // Optional: add shadow to the result container
+    resultDiv.style.marginTop = '10px'; // Optional: add margin to the result container
+    resultDiv.style.width = '100%'; // Optional: set width to 100%
+    resultDiv.style.maxWidth = '600px'; // Optional: set max width to 600px
+    resultDiv.style.boxSizing = 'border-box'; // Optional: set box sizing to border box
+    resultDiv.style.whiteSpace = 'pre-wrap'; // Optional: wrap text in the result container
+    resultDiv.style.wordBreak = 'break-word'; // Optional:    break long words in the result container
+    preview.appendChild(resultDiv);
+  }
+  // Function to display the result of the AI analysis
+  function displayAIAnalysisResult(result) {
+    var jsonString = JSON.stringify(result, null, 2);
+    const entries = JSON.parse(jsonString);
+    // if multiple entries
+    if (Array.isArray(entries)) {
+      preview.innerHTML += "<br>";
+      preview.innerHTML += `<p>Found ${entries.length} entries:</p>`;
+      // add one newline
+      preview.innerHTML += "<br>";
+      for (entry in entries) {
+        console.log(entry, entries[entry]);
+        preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
+        for (const [key, value] of Object.entries(entries[entry])) {
+          // display each key-value pair in the preview section
+          console.log(`${key}: ${value}`);
+          // create a new div for each entry
+          var entryDiv = document.createElement("div");
+          entryDiv.style.marginBottom = "10px"; // Spacing between each entry
+          entryDiv.style.fontFamily = "Arial, sans-serif";
+          entryDiv.style.fontSize = "14px";
+          entryDiv.style.color = "#333";
+          entryDiv.textContent = `${key}: ${value}`;
+          // Append the entry div to the preview section
+          preview.appendChild(entryDiv);
+        }
+        preview.innerHTML += "<hr>"; // Add a horizontal line between entries
+      }
+    } else {
+      preview.innerHTML += `<p>Found 1 entry:</p>`;
+      preview.innerHTML += "<br>";
+      for (const [key, value] of Object.entries(entries)) {
+        // display each key-value pair in the preview section
+        console.log(`${key}: ${value}`);
+        // create a new div for each entry
+        var entryDiv = document.createElement("div");
+        entryDiv.style.marginBottom = "10px"; // Spacing between each entry
+        entryDiv.style.fontFamily = "Arial, sans-serif";
+        entryDiv.style.fontSize = "14px";
+        entryDiv.style.color = "#333";
+        entryDiv.textContent = `${key}: ${value}`;
+        // Append the entry div to the preview section
+        preview.appendChild(entryDiv);
+      }
+    }
+  }
 </script>
 
 <style>

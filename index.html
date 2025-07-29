@@ -232,7 +232,7 @@
     }
   });
   // Function to display the AI analysis result in JSON format
-  function displayAIJsonResult(result) {
+  function displayAIAnalysisResult(result) {
     const preview = document.getElementById('preview');
     const resultDiv = document.createElement('div');
     resultDiv.style.marginTop = '20px';
@@ -252,52 +252,6 @@
     resultDiv.style.whiteSpace = 'pre-wrap'; // Optional: wrap text in the result container
     resultDiv.style.wordBreak = 'break-word'; // Optional:    break long words in the result container
     preview.appendChild(resultDiv);
-  }
-  // Function to display the result of the AI analysis
-  function displayAIAnalysisResult(result) {
-    var jsonString = JSON.stringify(result, null, 2);
-    const entries = JSON.parse(jsonString);
-    // if multiple entries
-    if (Array.isArray(entries)) {
-      preview.innerHTML += "<br>";
-      preview.innerHTML += `<p>Found ${entries.length} entries:</p>`;
-      // add one newline
-      preview.innerHTML += "<br>";
-      for (entry in entries) {
-        console.log(entry, entries[entry]);
-        preview.innerHTML += `<p>Fuel ${parseInt(entry) + 1}: </p>`;
-        for (const [key, value] of Object.entries(entries[entry])) {
-          // display each key-value pair in the preview section
-          console.log(`${key}: ${value}`);
-          // create a new div for each entry
-          var entryDiv = document.createElement("div");
-          entryDiv.style.marginBottom = "10px"; // Spacing between each entry
-          entryDiv.style.fontFamily = "Arial, sans-serif";
-          entryDiv.style.fontSize = "14px";
-          entryDiv.style.color = "#333";
-          entryDiv.textContent = `${key}: ${value}`;
-          // Append the entry div to the preview section
-          preview.appendChild(entryDiv);
-        }
-        preview.innerHTML += "<hr>"; // Add a horizontal line between entries
-      }
-    } else {
-      preview.innerHTML += `<p>Found 1 entry:</p>`;
-      preview.innerHTML += "<br>";
-      for (const [key, value] of Object.entries(entries)) {
-        // display each key-value pair in the preview section
-        console.log(`${key}: ${value}`);
-        // create a new div for each entry
-        var entryDiv = document.createElement("div");
-        entryDiv.style.marginBottom = "10px"; // Spacing between each entry
-        entryDiv.style.fontFamily = "Arial, sans-serif";
-        entryDiv.style.fontSize = "14px";
-        entryDiv.style.color = "#333";
-        entryDiv.textContent = `${key}: ${value}`;
-        // Append the entry div to the preview section
-        preview.appendChild(entryDiv);
-      }
-    }
   }
 </script>
 
